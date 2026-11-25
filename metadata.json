@@ -1,0 +1,6 @@
+{
+  "name": "ChargeGuard",
+  "description": "Battery charging alarm app for Android that alerts you with sound and vibration when your phone reaches your target charge percentage.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
