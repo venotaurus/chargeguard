@@ -1,0 +1,52 @@
+name: Build ChargeGuard APK
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v6
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Locate project & build APK
+        run: |
+          if [ ! -f "package.json" ] && [ -f "chargeguard.zip" ]; then
+            unzip -q chargeguard.zip
+          fi
+          PROJECT_DIR=$(dirname "$(find . -maxdepth 3 -name 'package.json' | head -n 1)")
+          if [ -z "$PROJECT_DIR" ] || [ "$PROJECT_DIR" = "." ]; then
+            echo "Building in root directory"
+          else
+            echo "Building in: $PROJECT_DIR"
+            cd "$PROJECT_DIR"
+          fi
+          npm install --legacy-peer-deps
+          npm run build
+          npm install @capacitor/core@8 @capacitor/cli@8 @capacitor/android@8 --legacy-peer-deps
+          npx cap init "ChargeGuard" "com.chargeguard.app" --web-dir=dist
+          npx cap add android
+          npx cap sync android
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+          mkdir -p "$GITHUB_WORKSPACE/output"
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/output/app-debug.apk"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChargeGuard-APK
+          path: output/app-debug.apk
